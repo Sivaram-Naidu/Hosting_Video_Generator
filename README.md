@@ -41,7 +41,7 @@ The app uploads as **you** (your Microsoft account), so no admin consent is requ
 5. On your PC, in this folder:
    ```bash
    pip install httpx
-   python get_token.py <tenant-id> <client-id>
+   python get_token.py      # asks for the two IDs
    ```
    Open the link it prints, enter the code, sign in, and accept the permissions.
    Copy the long token it prints → `MS_REFRESH_TOKEN` on Render.

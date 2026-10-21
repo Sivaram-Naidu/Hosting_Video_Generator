@@ -1,6 +1,6 @@
 """One-time Microsoft sign-in that prints a refresh token for MS_REFRESH_TOKEN.
 
-Usage:  python get_token.py <tenant-id> <client-id>
+Usage:  python get_token.py            (asks for the IDs)
 Then open the link shown, enter the code, and sign in with your Microsoft 365 account.
 Re-run it when the app reports "Microsoft sign-in expired" (about every 90 days).
 """
@@ -11,9 +11,12 @@ SCOPE = "https://graph.microsoft.com/Files.ReadWrite.All offline_access"
 
 
 def main():
-    if len(sys.argv) != 3:
-        sys.exit("Usage: python get_token.py <tenant-id> <client-id>")
-    tenant, client_id = sys.argv[1].strip(), sys.argv[2].strip()
+    if len(sys.argv) == 3:
+        tenant, client_id = sys.argv[1].strip(), sys.argv[2].strip()
+    else:
+        print("Find both IDs on the app's Overview page in entra.microsoft.com\n")
+        tenant = input("Directory (tenant) ID: ").strip()
+        client_id = input("Application (client) ID: ").strip()
     base = f"https://login.microsoftonline.com/{tenant}/oauth2/v2.0"
 
     r = httpx.post(f"{base}/devicecode", data={"client_id": client_id, "scope": SCOPE}, timeout=30)
