@@ -12,4 +12,4 @@ services:
       - key: MAX_CLIP_WORKERS
         value: "1"
       # SharePoint upload (optional, add later in Render -> Environment):
-      # MS_TENANT_ID, MS_CLIENT_ID, MS_REFRESH_TOKEN, SHAREPOINT_FOLDER_URL — see README
+      # MS_TENANT_ID, MS_CLIENT_ID, MS_REFRESH_TOKEN, SHAREPOINT_FOLDER_URL - see README
