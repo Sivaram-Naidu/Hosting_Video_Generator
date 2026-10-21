@@ -1,0 +1,12 @@
+# Secrets
+.env
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# Generated / temporary files
+outputs/
+work/

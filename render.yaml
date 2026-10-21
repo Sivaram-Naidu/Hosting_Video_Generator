@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: turingiq-video-generator
+    runtime: docker
+    plan: free
+    healthCheckPath: /healthz
+    envVars:
+      - key: SARVAM_API_KEY
+        sync: false
+      - key: APP_PASSWORD
+        sync: false
+      - key: MS_TENANT_ID
+        sync: false
+      - key: MS_CLIENT_ID
+        sync: false
+      - key: MS_CLIENT_SECRET
+        sync: false
+      - key: SHAREPOINT_FOLDER_URL
+        sync: false
+      - key: MAX_CLIP_WORKERS
+        value: "1"

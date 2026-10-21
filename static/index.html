@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>TuringIQ Video Generator</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --brand:   #5B4FE8;
+    --brand-d: #4338CA;
+    --accent:  #06B6D4;
+    --bg:      #F0F2FF;
+    --card:    #FFFFFF;
+    --text:    #1E1B4B;
+    --muted:   #6B7280;
+    --border:  #E0E7FF;
+    --success: #10B981;
+    --error:   #EF4444;
+    --radius:  14px;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 0 16px 60px;
+  }
+
+  /* ── Header ── */
+  header {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 36px 0 28px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .logo {
+    width: 44px; height: 44px;
+    background: var(--brand);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 22px;
+  }
+  header h1 { font-size: 22px; font-weight: 700; }
+  header p  { font-size: 13px; color: var(--muted); margin-top: 2px; }
+
+  /* ── Card ── */
+  .card {
+    background: var(--card);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    padding: 28px 32px;
+    max-width: 860px;
+    margin: 0 auto 20px;
+    box-shadow: 0 2px 12px rgba(91,79,232,.06);
+  }
+  .card-title {
+    font-size: 15px; font-weight: 600;
+    margin-bottom: 18px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .card-title span { font-size: 18px; }
+
+  /* ── Grid ── */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 640px) {
+    .grid-2 { grid-template-columns: 1fr; }
+    .card { padding: 20px 16px; }
+    .btn-dl { flex: 1 1 100%; text-align: center; }
+  }
+
+  /* ── Drop zone ── */
+  .drop-zone {
+    border: 2px dashed var(--border);
+    border-radius: 10px;
+    padding: 36px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color .2s, background .2s;
+    position: relative;
+  }
+  .drop-zone:hover, .drop-zone.drag-over {
+    border-color: var(--brand);
+    background: #EDE9FE22;
+  }
+  .drop-zone input[type=file] {
+    position: absolute; inset: 0; opacity: 0; cursor: pointer;
+  }
+  .drop-icon { font-size: 36px; display: block; margin-bottom: 8px; }
+  .drop-label { font-size: 14px; font-weight: 600; color: var(--brand); }
+  .drop-hint  { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .file-name  {
+    font-size: 13px; font-weight: 600; color: var(--success);
+    margin-top: 8px; word-break: break-all;
+  }
+
+  /* ── Textarea ── */
+  label.field-label {
+    display: block; font-size: 13px; font-weight: 600; margin-bottom: 8px;
+  }
+  .field-hint { font-size: 12px; color: var(--muted); margin-bottom: 8px; font-weight: 400; }
+  textarea {
+    width: 100%; height: 260px;
+    padding: 14px 16px;
+    border: 1.5px solid var(--border); border-radius: 10px;
+    font-family: "Consolas", "Monaco", monospace;
+    font-size: 13px; line-height: 1.6;
+    resize: vertical; outline: none; color: var(--text);
+    transition: border-color .2s;
+  }
+  textarea:focus { border-color: var(--brand); }
+
+  /* ── Settings row ── */
+  .settings { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 8px; }
+  .setting  { flex: 1; min-width: 160px; }
+  .setting label { font-size: 12px; font-weight: 600; color: var(--muted); display: block; margin-bottom: 6px; }
+  select {
+    width: 100%; padding: 9px 12px;
+    border: 1.5px solid var(--border); border-radius: 8px;
+    font-size: 13px; background: #fff; color: var(--text);
+    outline: none; cursor: pointer;
+    transition: border-color .2s;
+  }
+  select:focus { border-color: var(--brand); }
+  .toggle-row { display: flex; align-items: center; gap: 10px; margin-top: 16px; }
+  .toggle-label { font-size: 13px; font-weight: 600; }
+  .toggle-desc  { font-size: 12px; color: var(--muted); }
+  .toggle {
+    position: relative; display: inline-block; width: 44px; height: 24px; flex-shrink: 0;
+  }
+  .toggle input { opacity: 0; width: 0; height: 0; }
+  .slider {
+    position: absolute; inset: 0; border-radius: 24px;
+    background: #D1D5DB; cursor: pointer; transition: .2s;
+  }
+  .slider::before {
+    content: ""; position: absolute;
+    width: 18px; height: 18px; left: 3px; bottom: 3px;
+    border-radius: 50%; background: white; transition: .2s;
+    box-shadow: 0 1px 4px rgba(0,0,0,.2);
+  }
+  input:checked + .slider { background: var(--brand); }
+  input:checked + .slider::before { transform: translateX(20px); }
+
+  /* ── Submit button ── */
+  .btn-generate {
+    width: 100%; padding: 15px;
+    background: var(--brand); color: #fff;
+    border: none; border-radius: 10px;
+    font-size: 15px; font-weight: 700;
+    cursor: pointer; transition: background .2s, transform .1s;
+    margin-top: 8px;
+  }
+  .btn-generate:hover   { background: var(--brand-d); }
+  .btn-generate:active  { transform: scale(.98); }
+  .btn-generate:disabled { background: #A5B4FC; cursor: not-allowed; }
+
+  /* ── Progress ── */
+  #progress-card { display: none; }
+  .status-header { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
+  .spinner {
+    width: 22px; height: 22px; border: 3px solid var(--border);
+    border-top-color: var(--brand); border-radius: 50%;
+    animation: spin .8s linear infinite; flex-shrink: 0;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .status-text { font-size: 14px; font-weight: 600; }
+  .status-sub  { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  .progress-bar-wrap {
+    background: var(--border); border-radius: 8px;
+    height: 10px; overflow: hidden; margin-bottom: 8px;
+  }
+  .progress-bar {
+    height: 100%; background: linear-gradient(90deg, var(--brand), var(--accent));
+    border-radius: 8px; transition: width .4s ease;
+    width: 0%;
+  }
+  .progress-pct { font-size: 12px; color: var(--muted); text-align: right; }
+
+  /* ── Done ── */
+  #done-card { display: none; }
+  .done-banner {
+    background: #ECFDF5; border: 1.5px solid #6EE7B7;
+    border-radius: 10px; padding: 20px 24px;
+    display: flex; align-items: center; gap: 16px;
+  }
+  .done-icon { font-size: 32px; }
+  .done-name { font-size: 15px; font-weight: 700; color: #065F46; }
+  .done-sub  { font-size: 12px; color: #047857; margin-top: 2px; }
+  .download-buttons { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+  .btn-dl {
+    padding: 11px 22px; border-radius: 8px; font-size: 14px; font-weight: 600;
+    cursor: pointer; border: none; text-decoration: none; display: inline-block;
+    transition: opacity .2s;
+  }
+  .btn-dl:hover { opacity: .85; }
+  .btn-dl-primary { background: var(--brand); color: #fff; }
+  .btn-dl-secondary { background: #E0E7FF; color: var(--brand); }
+
+  /* ── Error ── */
+  #error-card { display: none; }
+  .error-box {
+    background: #FEF2F2; border: 1.5px solid #FCA5A5; border-radius: 10px;
+    padding: 16px 20px; font-size: 13px; color: #991B1B;
+  }
+
+  /* ── Videos list ── */
+  #videos-card { display: none; }
+  .video-list { list-style: none; }
+  .video-list li {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 0; border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+  .video-list li:last-child { border-bottom: none; }
+  .video-list .size { color: var(--muted); font-size: 12px; }
+
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 20px;
+    font-size: 11px; font-weight: 600; background: #E0E7FF; color: var(--brand);
+    margin-left: 8px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">🎬</div>
+  <div>
+    <h1>TuringIQ Video Generator</h1>
+    <p>Upload slides + transcript → get a narrated video</p>
+  </div>
+</header>
+
+<!-- ── Upload Card ── -->
+<div class="card" id="upload-card">
+  <div class="card-title"><span>📂</span> Input Files</div>
+  <div class="grid-2">
+
+    <!-- Slides upload -->
+    <div>
+      <label class="field-label">
+        Slides
+        <span class="field-hint">PPTX file or ZIP of PNG/JPG images</span>
+      </label>
+      <div class="drop-zone" id="slides-drop">
+        <input type="file" id="slides-file" accept=".pptx,.ppt,.zip" />
+        <span class="drop-icon">🖼️</span>
+        <div class="drop-label">Click or drag & drop</div>
+        <div class="drop-hint">.pptx · .ppt · .zip</div>
+        <div class="file-name" id="slides-name"></div>
+      </div>
+    </div>
+
+    <!-- Transcript -->
+    <div>
+      <label class="field-label" for="transcript">
+        Transcript
+        <span class="field-hint">Separate each slide's narration with <code>---</code></span>
+      </label>
+      <textarea id="transcript" placeholder="Slide 1 narration text here.
+---
+Slide 2 narration text here.
+---
+Slide 3 narration text here."></textarea>
+    </div>
+
+  </div>
+
+  <!-- Settings -->
+  <div class="card-title" style="margin-top:24px"><span>⚙️</span> Settings</div>
+  <div class="settings">
+    <div class="setting">
+      <label>Speaker</label>
+      <select id="speaker">
+        <option value="ishita">Ishita (Female, Default)</option>
+        <option value="anushka">Anushka (Female)</option>
+        <option value="arjun">Arjun (Male)</option>
+        <option value="kavya">Kavya (Female)</option>
+        <option value="abhilash">Abhilash (Male)</option>
+        <option value="manisha">Manisha (Female)</option>
+        <option value="vidya">Vidya (Female)</option>
+      </select>
+    </div>
+    <div class="setting">
+      <label>Language</label>
+      <select id="language">
+        <option value="en-IN">English (India)</option>
+        <option value="hi-IN">Hindi</option>
+        <option value="ta-IN">Tamil</option>
+        <option value="te-IN">Telugu</option>
+        <option value="kn-IN">Kannada</option>
+        <option value="ml-IN">Malayalam</option>
+        <option value="bn-IN">Bengali</option>
+        <option value="mr-IN">Marathi</option>
+        <option value="gu-IN">Gujarati</option>
+      </select>
+    </div>
+    <div class="setting">
+      <label>Target Duration (minutes) <span style="font-weight:400;color:#9CA3AF">— optional</span></label>
+      <input type="number" id="target-minutes" min="0" step="0.5" placeholder="e.g. 9.5"
+        style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;outline:none;color:var(--text);transition:border-color .2s"
+        onfocus="this.style.borderColor='var(--brand)'" onblur="this.style.borderColor='var(--border)'" />
+      <div style="font-size:11px;color:var(--muted);margin-top:5px">Stretches video to this length while keeping audio+video in sync. Leave empty to keep natural duration.</div>
+    </div>
+  </div>
+
+  <div class="toggle-row" style="margin-top:18px">
+    <label class="toggle">
+      <input type="checkbox" id="quality-toggle" />
+      <span class="slider"></span>
+    </label>
+    <div>
+      <div class="toggle-label">Quality mode (crossfade transitions)</div>
+      <div class="toggle-desc">Off = fast draft (ultrafast preset, hard cuts) · On = polished output (medium preset + 0.5s fade)</div>
+    </div>
+  </div>
+
+  <button class="btn-generate" id="generate-btn" onclick="startGeneration()">
+    🎬 Generate Video
+  </button>
+</div>
+
+<!-- ── Progress Card ── -->
+<div class="card" id="progress-card">
+  <div class="status-header">
+    <div class="spinner" id="spinner"></div>
+    <div>
+      <div class="status-text" id="status-text">Starting…</div>
+      <div class="status-sub" id="status-sub">This may take several minutes</div>
+    </div>
+  </div>
+  <div class="progress-bar-wrap">
+    <div class="progress-bar" id="progress-bar"></div>
+  </div>
+  <div class="progress-pct" id="progress-pct">0%</div>
+</div>
+
+<!-- ── Done Card ── -->
+<div class="card" id="done-card">
+  <div class="done-banner">
+    <div class="done-icon">✅</div>
+    <div>
+      <div class="done-name" id="done-filename">—</div>
+      <div class="done-sub" id="done-sub">Your video is ready to download</div>
+    </div>
+  </div>
+  <div class="download-buttons">
+    <a class="btn-dl btn-dl-primary" id="sp-video-btn" href="#" target="_blank" rel="noopener" style="display:none">☁️ Open in SharePoint</a>
+    <a class="btn-dl btn-dl-primary" id="dl-video-btn" href="#">⬇️ Download Video (.mp4)</a>
+    <a class="btn-dl btn-dl-secondary" id="dl-srt-btn" href="#">📄 Download Subtitles (.srt)</a>
+    <button class="btn-dl btn-dl-secondary" onclick="resetForm()">🔄 Generate Another</button>
+  </div>
+</div>
+
+<!-- ── Error Card ── -->
+<div class="card" id="error-card">
+  <div class="card-title"><span>❌</span> Generation Failed</div>
+  <div class="error-box" id="error-msg"></div>
+  <button class="btn-dl btn-dl-secondary" style="margin-top:14px" onclick="resetForm()">Try Again</button>
+</div>
+
+<!-- ── Past Videos Card ── -->
+<div class="card" id="videos-card">
+  <div class="card-title"><span>📼</span> Generated Videos (SharePoint)</div>
+  <ul class="video-list" id="video-list"></ul>
+</div>
+
+<script>
+let currentJobId = null;
+let pollTimer    = null;
+
+// ── Drag & drop ───────────────────────────────────────────────────────────────
+const dropZone  = document.getElementById('slides-drop');
+const fileInput = document.getElementById('slides-file');
+const fileName  = document.getElementById('slides-name');
+
+fileInput.addEventListener('change', () => {
+  if (fileInput.files[0]) fileName.textContent = fileInput.files[0].name;
+});
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', ()  => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('drag-over');
+  const f = e.dataTransfer.files[0];
+  if (f) { fileInput.files = e.dataTransfer.files; fileName.textContent = f.name; }
+});
+
+// ── Generate ──────────────────────────────────────────────────────────────────
+async function startGeneration() {
+  const file       = fileInput.files[0];
+  const transcript = document.getElementById('transcript').value.trim();
+  const speaker       = document.getElementById('speaker').value;
+  const language      = document.getElementById('language').value;
+  const draft         = !document.getElementById('quality-toggle').checked;
+  const targetMinutes = parseFloat(document.getElementById('target-minutes').value) || 0;
+
+  if (!file)       { alert('Please upload a PPTX or ZIP file.'); return; }
+  if (!transcript) { alert('Please enter the transcript.'); return; }
+
+  const blocks = transcript.split('---').filter(s => s.trim());
+  if (blocks.length === 0) { alert('Transcript has no content.'); return; }
+
+  // UI state
+  document.getElementById('generate-btn').disabled = true;
+  show('progress-card');
+  hide('done-card'); hide('error-card');
+
+  const form = new FormData();
+  form.append('slides_file',    file);
+  form.append('transcript',     transcript);
+  form.append('speaker',        speaker);
+  form.append('language',       language);
+  form.append('draft',          draft ? 'true' : 'false');
+  form.append('target_minutes', targetMinutes);
+
+  try {
+    const resp = await fetch('/generate', { method: 'POST', body: form });
+    const data = await resp.json();
+    if (!resp.ok) { showError(data.detail || 'Unknown error'); return; }
+    currentJobId = data.job_id;
+    pollStatus();
+  } catch (e) {
+    showError(e.message);
+  }
+}
+
+// ── Polling ───────────────────────────────────────────────────────────────────
+function pollStatus() {
+  pollTimer = setTimeout(async () => {
+    try {
+      const resp = await fetch(`/status/${currentJobId}`);
+      const data = await resp.json();
+      if (resp.status === 404) { showError(data.detail || 'Job not found'); return; }
+
+      document.getElementById('status-text').textContent = data.message || '…';
+      document.getElementById('progress-bar').style.width = (data.progress || 0) + '%';
+      document.getElementById('progress-pct').textContent = (data.progress || 0) + '%';
+
+      if (data.status === 'done') {
+        onDone(data);
+      } else if (data.status === 'error') {
+        showError(data.error || 'Generation failed');
+      } else {
+        pollStatus(); // keep polling
+      }
+    } catch (e) {
+      pollStatus(); // retry on network blip
+    }
+  }, 2000);
+}
+
+function onDone(data) {
+  hide('progress-card');
+  show('done-card');
+  document.getElementById('done-filename').textContent = data.filename;
+  document.getElementById('dl-video-btn').href = `/download/${currentJobId}`;
+  document.getElementById('dl-srt-btn').href  = `/download-srt/${currentJobId}`;
+  const sp = document.getElementById('sp-video-btn');
+  const sub = document.getElementById('done-sub');
+  if (data.sharepoint_url) {
+    sp.href = data.sharepoint_url;
+    sp.style.display = 'inline-block';
+    sub.textContent = 'Saved to SharePoint. Download now — the server copy is cleared when the next video starts.';
+  } else {
+    sp.style.display = 'none';
+    sub.textContent = data.upload_error
+      ? data.upload_error + ' — download it now; it is cleared when the next video starts.'
+      : 'Download it now — it is cleared when the next video starts.';
+  }
+  loadVideos();
+}
+
+function showError(msg) {
+  hide('progress-card');
+  show('error-card');
+  document.getElementById('error-msg').textContent = msg;
+  document.getElementById('generate-btn').disabled = false;
+}
+
+function resetForm() {
+  if (pollTimer) clearTimeout(pollTimer);
+  currentJobId = null;
+  fileInput.value = '';
+  fileName.textContent = '';
+  document.getElementById('transcript').value = '';
+  document.getElementById('generate-btn').disabled = false;
+  hide('progress-card'); hide('done-card'); hide('error-card');
+  document.getElementById('progress-bar').style.width = '0%';
+  document.getElementById('progress-pct').textContent = '0%';
+}
+
+// ── Past Videos ───────────────────────────────────────────────────────────────
+async function loadVideos() {
+  try {
+    const data = await (await fetch('/videos')).json();
+    const list = document.getElementById('video-list');
+    if (!data.length) return;
+    list.innerHTML = data.map(v => `
+      <li>
+        <a href="${esc(v.web_url)}" target="_blank" rel="noopener" style="color:var(--brand);word-break:break-all">${esc(v.name)}</a>
+        <span class="badge">${v.size_mb} MB</span>
+      </li>`).join('');
+    show('videos-card');
+  } catch (_) {}
+}
+
+// ── Utils ─────────────────────────────────────────────────────────────────────
+function show(id) { document.getElementById(id).style.display = 'block'; }
+function hide(id) { document.getElementById(id).style.display = 'none';  }
+function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML.replace(/"/g, '&quot;'); }
+
+// Load existing videos on page open
+loadVideos();
+</script>
+</body>
+</html>
