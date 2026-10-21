@@ -7,7 +7,7 @@ Two auth modes (pick one):
 Plus SHAREPOINT_FOLDER_URL — the sharing link of the destination folder
 ("Copy link" in SharePoint/OneDrive).
 """
-import os, time, base64, threading
+import os, re, time, base64, threading
 from pathlib import Path
 from urllib.parse import quote
 
@@ -124,15 +124,28 @@ class SharePointStorage:
             raise RuntimeError(f"Upload of {name} did not complete")
         return {"name": item["name"], "web_url": item["webUrl"], "size": item.get("size", size)}
 
-    def list_videos(self) -> list:
+    def _children(self) -> list:
+        """All items in the folder (follows paging)."""
         drive_id, folder_id = self._folder()
-        r = httpx.get(
-            f"{GRAPH}/drives/{drive_id}/items/{folder_id}/children",
-            params={"$select": "name,size,webUrl,lastModifiedDateTime", "$top": "200"},
-            headers=self._headers(), timeout=30,
-        )
-        r.raise_for_status()
-        items = [i for i in r.json().get("value", []) if i["name"].lower().endswith(".mp4")]
+        url = f"{GRAPH}/drives/{drive_id}/items/{folder_id}/children"
+        params = {"$select": "name,size,webUrl,lastModifiedDateTime", "$top": "999"}
+        items = []
+        while url:
+            r = httpx.get(url, params=params, headers=self._headers(), timeout=30)
+            r.raise_for_status()
+            data = r.json()
+            items += data.get("value", [])
+            url, params = data.get("@odata.nextLink"), None
+        return items
+
+    def next_serial(self) -> int:
+        """1 + the highest NNN_ prefix already in the folder."""
+        nums = [int(m.group(1)) for i in self._children()
+                if (m := re.match(r"(\d+)_", i["name"]))]
+        return max(nums, default=0) + 1
+
+    def list_videos(self) -> list:
+        items = [i for i in self._children() if i["name"].lower().endswith(".mp4")]
         items.sort(key=lambda i: i["lastModifiedDateTime"], reverse=True)
         return [{"name": i["name"], "size_mb": round(i.get("size", 0) / 1_048_576, 1),
                  "web_url": i["webUrl"]} for i in items]

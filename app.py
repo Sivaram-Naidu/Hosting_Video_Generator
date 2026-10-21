@@ -59,8 +59,15 @@ def clear_previous_files():
 
 
 def video_basename(upload_name: str) -> str:
-    stem = re.sub(r"[^A-Za-z0-9_-]+", "_", Path(upload_name).stem).strip("_") or "video"
-    return f"{stem[:60]}_{datetime.now(IST):%Y%m%d_%H%M%S}"
+    """001_<ppt name> — serial continues from the files already in SharePoint."""
+    stem = re.sub(r'[\\/:*?"<>|#%\x00-\x1f]+', "_", Path(upload_name).stem)
+    stem = stem.strip(" ._")[:80] or "video"
+    if STORAGE:
+        try:
+            return f"{STORAGE.next_serial():03d}_{stem}"
+        except Exception:
+            pass   # SharePoint unreachable — fall back to a timestamp so names stay unique
+    return f"{stem}_{datetime.now(IST):%Y%m%d_%H%M%S}"
 
 
 def find_soffice():
