@@ -21,14 +21,15 @@ How it works on the server:
 |---|---|
 | `SARVAM_API_KEY` | Your Sarvam AI key |
 | `APP_PASSWORD` | Password users type to open the site |
-| `MS_TENANT_ID`, `MS_CLIENT_ID`, `MS_REFRESH_TOKEN` | From step 2 below |
-| `SHAREPOINT_FOLDER_URL` | Sharing link of the destination folder (step 2) |
 
 4. Deploy. The first build takes ~5–10 minutes. Your URL looks like `https://turingiq-video-generator.onrender.com`.
 
 **Free plan limits:** the service sleeps after 15 minutes without visits (the first visit after that takes ~1 minute to wake up), and it has 512 MB RAM. Draft mode is the safest; quality mode with many slides may run out of memory.
 
-## 2. Connect a SharePoint / OneDrive folder (no admin needed)
+## 2. Connect a SharePoint / OneDrive folder (optional, later)
+
+Add these in Render → your service → **Environment**: `MS_TENANT_ID`, `MS_CLIENT_ID`, `MS_REFRESH_TOKEN`, `SHAREPOINT_FOLDER_URL`.
+If your organisation shows **"Need admin approval"** at sign-in, an admin has to grant consent first.
 
 The app uploads as **you** (your Microsoft account), so no admin consent is required.
 

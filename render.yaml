@@ -9,13 +9,7 @@ services:
         sync: false
       - key: APP_PASSWORD
         sync: false
-      - key: MS_TENANT_ID
-        sync: false
-      - key: MS_CLIENT_ID
-        sync: false
-      - key: MS_REFRESH_TOKEN
-        sync: false
-      - key: SHAREPOINT_FOLDER_URL
-        sync: false
       - key: MAX_CLIP_WORKERS
         value: "1"
+      # SharePoint upload (optional, add later in Render -> Environment):
+      # MS_TENANT_ID, MS_CLIENT_ID, MS_REFRESH_TOKEN, SHAREPOINT_FOLDER_URL — see README
