@@ -1,8 +1,10 @@
 """Upload finished videos to a SharePoint / OneDrive for Business folder via Microsoft Graph.
 
-Uses app-only auth (client credentials). Configure with env vars:
-    MS_TENANT_ID, MS_CLIENT_ID, MS_CLIENT_SECRET, SHAREPOINT_FOLDER_URL
-SHAREPOINT_FOLDER_URL is the sharing link of the destination folder
+Two auth modes (pick one):
+  * Signed-in user (no admin consent):  MS_TENANT_ID, MS_CLIENT_ID, MS_REFRESH_TOKEN
+    Get the refresh token by running `python get_token.py` once.
+  * App-only (needs admin consent):     MS_TENANT_ID, MS_CLIENT_ID, MS_CLIENT_SECRET
+Plus SHAREPOINT_FOLDER_URL — the sharing link of the destination folder
 ("Copy link" in SharePoint/OneDrive).
 """
 import os, time, base64, threading
@@ -13,13 +15,16 @@ import httpx
 
 GRAPH = "https://graph.microsoft.com/v1.0"
 CHUNK = 320 * 1024 * 16   # 5 MiB — Graph requires multiples of 320 KiB
+DELEGATED_SCOPE = "https://graph.microsoft.com/Files.ReadWrite.All offline_access"
 
 
 class SharePointStorage:
-    def __init__(self, tenant_id: str, client_id: str, client_secret: str, folder_url: str):
+    def __init__(self, tenant_id: str, client_id: str, folder_url: str,
+                 client_secret: str = "", refresh_token: str = ""):
         self.tenant_id = tenant_id
         self.client_id = client_id
         self.client_secret = client_secret
+        self.refresh_token = refresh_token
         self.folder_url = folder_url
         self._token = None
         self._token_exp = 0.0
@@ -28,30 +33,47 @@ class SharePointStorage:
 
     @classmethod
     def from_env(cls):
-        keys = ("MS_TENANT_ID", "MS_CLIENT_ID", "MS_CLIENT_SECRET", "SHAREPOINT_FOLDER_URL")
-        vals = [os.getenv(k, "").strip() for k in keys]
-        if not all(vals):
+        env = {k: os.getenv(k, "").strip() for k in (
+            "MS_TENANT_ID", "MS_CLIENT_ID", "SHAREPOINT_FOLDER_URL",
+            "MS_CLIENT_SECRET", "MS_REFRESH_TOKEN")}
+        if not (env["MS_TENANT_ID"] and env["MS_CLIENT_ID"] and env["SHAREPOINT_FOLDER_URL"]):
             return None
-        return cls(*vals)
+        if not (env["MS_CLIENT_SECRET"] or env["MS_REFRESH_TOKEN"]):
+            return None
+        return cls(env["MS_TENANT_ID"], env["MS_CLIENT_ID"], env["SHAREPOINT_FOLDER_URL"],
+                   client_secret=env["MS_CLIENT_SECRET"], refresh_token=env["MS_REFRESH_TOKEN"])
 
     # ── Auth ──────────────────────────────────────────────────────────────────
 
     def _headers(self) -> dict:
         with self._lock:
             if not self._token or time.time() > self._token_exp - 120:
-                r = httpx.post(
-                    f"https://login.microsoftonline.com/{self.tenant_id}/oauth2/v2.0/token",
-                    data={
+                if self.client_secret:
+                    form = {
                         "grant_type": "client_credentials",
                         "client_id": self.client_id,
                         "client_secret": self.client_secret,
                         "scope": "https://graph.microsoft.com/.default",
-                    },
-                    timeout=30,
+                    }
+                else:
+                    form = {
+                        "grant_type": "refresh_token",
+                        "client_id": self.client_id,
+                        "refresh_token": self.refresh_token,
+                        "scope": DELEGATED_SCOPE,
+                    }
+                r = httpx.post(
+                    f"https://login.microsoftonline.com/{self.tenant_id}/oauth2/v2.0/token",
+                    data=form, timeout=30,
                 )
+                if r.status_code == 400 and not self.client_secret:
+                    raise RuntimeError("Microsoft sign-in expired — run get_token.py again "
+                                       "and update MS_REFRESH_TOKEN on Render")
                 r.raise_for_status()
                 data = r.json()
                 self._token = data["access_token"]
+                # Microsoft rotates refresh tokens; keep the newest one for this process
+                self.refresh_token = data.get("refresh_token", self.refresh_token)
                 self._token_exp = time.time() + int(data.get("expires_in", 3600))
             return {"Authorization": f"Bearer {self._token}"}
 

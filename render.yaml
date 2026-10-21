@@ -13,7 +13,7 @@ services:
         sync: false
       - key: MS_CLIENT_ID
         sync: false
-      - key: MS_CLIENT_SECRET
+      - key: MS_REFRESH_TOKEN
         sync: false
       - key: SHAREPOINT_FOLDER_URL
         sync: false
